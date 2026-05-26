@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any
+from typing import Any, Optional, Union
 
 from bt_api_base.containers.requestdatas.request_data import RequestData
 from bt_api_base.feeds.capability import Capability
@@ -13,6 +13,9 @@ from bt_api_tradier.containers.tradier_account import TradierAccountData
 from bt_api_tradier.exchange_data import TradierExchangeDataStock
 from bt_api_tradier.mapping import environment_account_id, map_order_payload, map_quote_payload
 from bt_api_tradier.transport import TradierTransportConfig, build_request_context
+
+BalanceScalar = Union[float, str]
+OrderScalar = Union[float, str, None]
 
 
 class TradierRequestData(Feed):
@@ -36,7 +39,7 @@ class TradierRequestData(Feed):
         self._params = TradierExchangeDataStock()
         self._params.rest_url = self.base_url
         self.quotes: dict[str, float] = {"AAPL": 189.25, "MSFT": 425.0}
-        self.balance_payload: dict[str, float | str] = {
+        self.balance_payload: dict[str, BalanceScalar] = {
             "account_id": self.account_id,
             "currency": "USD",
             "cash": 50000.0,
@@ -44,8 +47,8 @@ class TradierRequestData(Feed):
             "buying_power": 100000.0,
             "unrealized_pnl": 0.0,
         }
-        self.orders: dict[str, dict[str, float | str | None]] = {}
-        self.last_request_context: dict[str, object] | None = None
+        self.orders: dict[str, dict[str, OrderScalar]] = {}
+        self.last_request_context: Optional[dict[str, object]] = None
 
     @classmethod
     def _capabilities(cls) -> set[Capability]:
@@ -68,7 +71,13 @@ class TradierRequestData(Feed):
             validate_credentials(access_token=self.access_token)
         super().connect()
 
-    def _wrap_request(self, data: Any, *, request_type: str, symbol_name: str | None = None) -> RequestData:
+    def _wrap_request(
+        self,
+        data: Any,
+        *,
+        request_type: str,
+        symbol_name: Optional[str] = None,
+    ) -> RequestData:
         extra_data = {
             "exchange_name": self.exchange_name,
             "symbol_name": symbol_name or "",
@@ -137,7 +146,7 @@ class TradierRequestData(Feed):
         order_type: str = "limit",
         offset: str = "open",
         post_only: bool = False,
-        client_order_id: str | None = None,
+        client_order_id: Optional[str] = None,
         extra_data: Any = None,
         **kwargs: Any,
     ) -> Any:

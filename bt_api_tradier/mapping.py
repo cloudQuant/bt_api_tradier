@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from typing import Union
+
+Scalar = Union[float, str]
+OrderScalar = Union[float, str, None]
+
 
 def environment_account_id(paper: bool) -> str:
     return "tradier-paper" if paper else "tradier-live"
 
 
-def map_balance_payload(payload: dict[str, float | str]) -> dict[str, float]:
+def map_balance_payload(payload: dict[str, Scalar]) -> dict[str, float]:
     cash = float(payload.get("cash", payload.get("total_cash", 0.0)))
     value = float(payload.get("equity", payload.get("value", cash)))
     buying_power = float(payload.get("buying_power", payload.get("available_cash", cash)))
@@ -16,7 +21,7 @@ def map_balance_payload(payload: dict[str, float | str]) -> dict[str, float]:
     }
 
 
-def map_order_payload(payload: dict[str, float | str]) -> dict[str, float | str | None]:
+def map_order_payload(payload: dict[str, Scalar]) -> dict[str, OrderScalar]:
     order_id = str(payload.get("order_id", payload.get("id", "order-unknown")))
     return {
         "id": order_id,
@@ -30,7 +35,7 @@ def map_order_payload(payload: dict[str, float | str]) -> dict[str, float | str 
     }
 
 
-def map_position_payload(payload: dict[str, float | str]) -> dict[str, float | str]:
+def map_position_payload(payload: dict[str, Scalar]) -> dict[str, Scalar]:
     return {
         "instrument": str(payload.get("symbol", "UNKNOWN")),
         "volume": float(payload.get("quantity", payload.get("qty", 0.0))),

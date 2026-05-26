@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import Any
+from typing import Any, Optional, Union
 
 from bt_api_base.gateway.adapters.base import BaseGatewayAdapter
 from bt_api_base.gateway.models import GatewayTick
@@ -17,6 +17,9 @@ from bt_api_tradier.mapping import (
     map_quote_payload,
 )
 from bt_api_tradier.transport import TradierTransportConfig, build_request_context
+
+PositionScalar = Union[float, str]
+OrderScalar = Union[float, str, None]
 
 
 class TradierGatewayAdapter(BaseGatewayAdapter):
@@ -45,9 +48,9 @@ class TradierGatewayAdapter(BaseGatewayAdapter):
             "equity": 50000.0,
             "buying_power": 100000.0,
         }
-        self.positions_payload: dict[str, dict[str, float | str]] = {}
-        self.orders_payload: dict[str, dict[str, float | str | None]] = {}
-        self.last_request_context: dict[str, object] | None = None
+        self.positions_payload: dict[str, dict[str, PositionScalar]] = {}
+        self.orders_payload: dict[str, dict[str, OrderScalar]] = {}
+        self.last_request_context: Optional[dict[str, object]] = None
 
     def connect(self) -> None:
         if self.connected:

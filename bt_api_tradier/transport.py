@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
+@dataclass
 class TradierTransportConfig:
     base_url: str
     timeout_sec: float = 10.0

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, Optional
 
 from bt_api_base.containers.accounts.account import AccountData
 
@@ -10,7 +10,7 @@ class TradierAccountData(AccountData):
     def __init__(
         self,
         account_info: Any,
-        symbol_name: str | None = None,
+        symbol_name: Optional[str] = None,
         asset_type: str = "STK",
         has_been_json_encoded: bool = True,
     ) -> None:
