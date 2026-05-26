@@ -3,10 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import bt_api_py.bt_api as bt_api_module
+import pytest
 from bt_api_base.plugins.loader import PluginLoader
 from bt_api_base.registry import ExchangeRegistry
-from bt_api_py.bt_api import BtApi
 
 
 @dataclass
@@ -20,24 +19,45 @@ class _FakeEntryPoint:
         return register_plugin
 
 
+def _resolve_bt_api_runtime() -> tuple[Any, Any, Any]:
+    bt_api_module = pytest.importorskip("bt_api_py.bt_api")
+    bt_api_cls = getattr(bt_api_module, "BtApi", None)
+    runtime_registrar = getattr(bt_api_module, "_runtime_registrar", None)
+    if bt_api_cls is None or runtime_registrar is None:
+        pytest.skip("installed bt_api_py does not expose old-plugin-mode runtime integration yet")
+    return bt_api_module, bt_api_cls, runtime_registrar
+
+
 def setup_function() -> None:
+    try:
+        _, _, runtime_registrar = _resolve_bt_api_runtime()
+    except BaseException:
+        ExchangeRegistry.clear()
+        return
     ExchangeRegistry.clear()
-    bt_api_module._runtime_registrar._adapters.clear()
+    runtime_registrar._adapters.clear()
 
 
 def teardown_function() -> None:
+    try:
+        _, _, runtime_registrar = _resolve_bt_api_runtime()
+    except BaseException:
+        ExchangeRegistry.clear()
+        return
     ExchangeRegistry.clear()
-    bt_api_module._runtime_registrar._adapters.clear()
+    runtime_registrar._adapters.clear()
 
 
 def _load_tradier_plugin(monkeypatch) -> PluginLoader:
-    loader = PluginLoader(ExchangeRegistry, bt_api_module._runtime_registrar)
+    bt_api_module, _, runtime_registrar = _resolve_bt_api_runtime()
+    loader = PluginLoader(ExchangeRegistry, runtime_registrar)
     monkeypatch.setattr(loader, "_discover_entry_points", lambda group: [_FakeEntryPoint()])
     loader.load_all()
     return loader
 
 
 def test_plugin_loader_registers_bt_api_tradier_for_bt_api(monkeypatch) -> None:
+    bt_api_module, _, _ = _resolve_bt_api_runtime()
     loader = _load_tradier_plugin(monkeypatch)
 
     assert "bt_api_tradier" in loader.loaded
@@ -55,9 +75,10 @@ def test_plugin_loader_registers_bt_api_tradier_for_bt_api(monkeypatch) -> None:
 
 
 def test_bt_api_consumes_tradier_plugin_balance_and_subscribe(monkeypatch) -> None:
+    _, bt_api_cls, _ = _resolve_bt_api_runtime()
     _load_tradier_plugin(monkeypatch)
 
-    api = BtApi({"TRADIER___STK": {"account_id": "tradier-paper"}}, debug=False)
+    api = bt_api_cls({"TRADIER___STK": {"account_id": "tradier-paper"}}, debug=False)
     try:
         api.update_total_balance()
 
