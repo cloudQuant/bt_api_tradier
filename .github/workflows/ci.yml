@@ -26,7 +26,6 @@ jobs:
       - name: Install base dependencies
         run: |
           pip install "git+https://github.com/cloudQuant/bt_api_base.git"
-          pip install "git+https://github.com/cloudQuant/bt_api_py.git"
 
       - name: Install package and test tools
         run: |
