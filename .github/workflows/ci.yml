@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test (${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install base dependencies
+        run: |
+          pip install "git+https://github.com/cloudQuant/bt_api_base.git"
+          pip install "git+https://github.com/cloudQuant/bt_api_py.git"
+
+      - name: Install package and test tools
+        run: |
+          pip install -e .
+          pip install pytest pytest-asyncio ruff build
+
+      - name: Ruff
+        run: ruff check bt_api_tradier tests
+
+      - name: Pytest
+        run: python -m pytest tests -q --tb=short
+
+      - name: Build package
+        run: python -m build
